@@ -1,0 +1,71 @@
+<html ng-app="friends_app">
+<head>
+<title>Full Mean Demo</title>
+  <!-- require angular -->
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+<script>
+  // Let's create our angular module
+var friends_app = angular.module('friends_app', []);
+// Now let's create a FriendsController 
+friends_app.controller('FriendsController', function($scope, FriendFactory) {
+  
+  FriendFactory.index(function(data){
+    $scope.friends = data;
+  });
+//option 2 - could use $scope.addfriend = function() without passing data
+  $scope.addfriend = function(new_friend){
+    console.log("newfriend data passed to scope controller", new_friend)
+//option 2 - could use FriendFactory.addFriend($scope.new_friend, function(){
+    FriendFactory.create(new_friend, function(data) {
+
+//option 2 - $scope.friends = FriendFactory.getFriends();
+//the line below says: set our $scope.friends variable to whatever is returned from FriendFactory.index.  In this case, that will be all the friends.
+      $scope.friends = data;
+      $scope.new_friend = {};
+  })
+
+}
+});
+// create the FriendFactory
+friends_app.factory('FriendFactory', function($http) {
+  var factory = {};
+  var friends = [];
+//Restful syntax: index = get all that object
+  factory.index = function(callback) {
+    
+    $http.get('/friends').success(function(output) {
+    //friends = output;
+    callback(output);
+  })
+  }
+  // note the use of callbacks!
+  // Restful syntax: create = add one to that object
+  factory.create = function(info, callback) {
+    $http.post('/friends', info).success(function(output) {
+    callback(output);
+  })
+  }
+  return factory;
+})
+</script>
+</head>
+<!-- everything in the body is going to use the friends controller (this gives us access to the friends controller $scope) -->
+<body ng-controller="FriendsController">
+  <h1>Friends</h1>
+  <input type="text" ng-model="filter_name" placeholder="filter">
+  {{filter_name}}
+  <ul>
+    <!-- here is where we are going to display friends -->
+    <li ng-repeat="friend in friends | filter: filter_name">
+      {{friend.name}}, {{friend.age}}
+    </li>
+  </ul>
+  <h1>Add a Friend</h1>
+  <!-- objects and properties nothing scary -->
+  <input type="text" ng-model="new_friend.name" placeholder="name">
+  <input type="text" ng-model="new_friend.age" placeholder="age">
+  <!-- addfriend() is a method we are going to make in the angular controller -->
+  <input type="submit" ng-click="addfriend(new_friend)">
+  <!--  options 2 call function without passing data <input type="submit" ng-click="addfriend()"> -->
+</body>
+</html>
